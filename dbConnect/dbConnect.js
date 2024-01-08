@@ -1,6 +1,5 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv").config();
 
 const dbconnect =async ()=>{
 
@@ -9,7 +8,7 @@ try{
     console.log("connected to database");
 }
 catch(err){
-    console.log("error connecting to database", err);
+    console.log("error connecting to database:", err);
 }
 
 }

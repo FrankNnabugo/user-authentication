@@ -2,32 +2,28 @@ const express = require ("express");
 const dotenv = require("dotenv").config();
 const helmet = require("helmet");
 const {dbconnect} = require("./dbConnect/dbConnect");
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 const {router}= require("./route/auth.route")
-const {errorHandling} = require("./middleware/errorHandling");
+const {errorHandler} = require("./middleware/errorHandler");
 
-//init express
+
 const app = express();
 
 
-//middleware
 app.use(express.json());
 app.use(helmet());
 app.use((req, res, next)=>{
-console.log(req.path, req.method)
-next();
+console.log(req.method, req.path);
 });
+app.use(errorHandler);
 
-app.use(errorHandling);
-
-//use route
 
 app.use("/auth", router);
 
 
 
-//listen to port
-app.listen(process.env.PORT || 3000, ()=>{
+
+app.listen(process.env.PORT, ()=>{
     console.log("server is listening on port", PORT);
 }); 
 

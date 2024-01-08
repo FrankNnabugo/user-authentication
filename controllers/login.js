@@ -1,40 +1,43 @@
 const {User}= require("../Schema/user.schema");
 const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
-
-const userLogin = async(req, res)=>{
-    const{email, password} = req.body;
+const cookie = require("cookie-parser");
 
 
-//check if user exist before attempting to log user in
+
+const Login = async(req, res)=>{
+    const{email, hashPassword} = req.body;
+
 try{
     const checkUser = await User.findOne({email});
-    if(!checkUser){
-        return
-         res.status(400).json({message: "user not found"});
-    }
+    if(!checkUser) throw new Error("user does not exist");
 
-    //check if user password matches hashed password in the db
-    const validatePassword = checkUser.password === password;
-    if(!validatePassword)
+    const validatePassword = await checkUser.compare({hashPassword})
+    if(!validatePassword) throw new Error("invalid email or password")
 
-    {
-      return
-       res.status(404).json({message: "invalid email or password"});
-    }
-
-    //generate a jwt token
-
-const token = jwt.sign({userId : checkUser._id}, process.env.JWT_SECRET_KEY);
-res.cookie("accessToken", token, {
-httpOnly:true
+const token = jwt.sign({id:checkUser}, process.env.JWT_SECRET_KEY, {
+    expiresIn: "10m"
 });
-res.status(200).json({message:"user logged in"});
+res.headers("authorization", token);
+checkUser.token = token;
+
+const refreshToken = jwt.sign({id:checkUser},process.env.REFRESH_TOKEN, {
+    expiresIn: "30d"
+});
+res.cookie("refreshToken", refreshToken, {
+    httpOnly:true,
+    secure:true,
+    sameSite:"none"
+});
+checkUser.refreshToken = refreshToken;
+
+res.status(200).json({message:"user logged in:", checkUser});
 }
-catch(error){
-    console.error("error logging in:", error);
+catch(err){
+    console.error("error logging in:", err);
     res.status(500).json({message : "an error occured while logging in"});
 }
-
+return{checkUser, token, refreshToken};
 }
-module.exports = {userLogin};
+
+
+module.exports = {Login};
